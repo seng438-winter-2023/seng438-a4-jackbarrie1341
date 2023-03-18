@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.jfree.data.Range;
 import org.junit.Test;
 
-public class RangeTests {
+public class RangeTestsNew {
 	
 	private Range exampleRange;
 	private Range sampleRange;
@@ -126,12 +126,74 @@ public class RangeTests {
 	}
 	
 	@Test
+	public void testCentralValueNotNaN() {
+		exampleRange = new Range(-1, 1);
+		
+		assertFalse("Central value should be 0", Double.isNaN(exampleRange.getCentralValue()));
+	}
+	
+	@Test
+	public void testCentralValuePositive() {
+		exampleRange = new Range(1, 2);
+		
+		assertEquals("Central value should be 1.5", 1.5, exampleRange.getCentralValue(), .000000001d);
+	}
+	
+	@Test
+	public void testCentralValuePositive2() {
+		exampleRange = new Range(1, 2);
+		double actual = exampleRange.getCentralValue();
+		actual = exampleRange.getCentralValue();
+		assertEquals("Central value should be 1.5", 1.5, actual, .000000001d);
+	}
+	
+	@Test
 	public void testIntersects() {
 		exampleRange = new Range(-1, 1);
 		Range range2 = new Range(0, 2);
 		
 		assertTrue(exampleRange.intersects(range2));
 		
+	}
+	
+	@Test
+	public void testIntersectsDoesntChangeBounds() {
+		
+		Range range1 = new Range(0, 2);
+		Range range2 = new Range(1, 3);
+		
+		range1.intersects(range2);
+		range1.intersects(range2);
+		
+		boolean actual = false;
+		
+		if (range1.getUpperBound() == 2 && 
+			range1.getLowerBound() == 0 && 
+			range2.getLowerBound() == 1 && 
+			range2.getUpperBound() == 3) 
+		{
+			actual = true;
+		}
+		
+		assertTrue("insert changed  the values of the bounds", actual);
+	}
+	
+	@Test
+	public void testIntersectsDoesntChangeBounds2() {
+		
+		Range range1 = new Range(0, 2);
+		
+		range1.intersects(1, 3);
+		
+		boolean actual = false;
+		
+		if (range1.getUpperBound() == 2 && 
+			range1.getLowerBound() == 0)
+		{
+			actual = true;
+		}
+		
+		assertTrue("insert changed  the values of the bounds", actual);
 	}
 	
 	@Test
@@ -155,6 +217,18 @@ public class RangeTests {
 		
 		exampleRange = new Range(-1, 1);
 		assertEquals("Range[-1.0,1.0]", exampleRange.toString());
+	}
+	
+	@Test
+	public void testToStringDoesntChangeBounds() {
+		
+		exampleRange = new Range(-1, 1);
+		exampleRange.toString();
+		assertEquals("Range[-1.0,1.0]", exampleRange.toString());
+		assertEquals(-1, exampleRange.getLowerBound(), 0.00001d);
+		assertEquals(1, exampleRange.getUpperBound(), 0.00001d);
+		
+		
 	}
 	
 	@Test
@@ -224,6 +298,25 @@ public class RangeTests {
 		exampleRange = new Range(-10.23, 25.02);
 		assertTrue("The value 25.02 should be within (-10.23, 25.02)", exampleRange.contains(25.02));
 	}
+	
+	@Test
+	public void testContainsRangeIsSingleValue1() {
+		exampleRange = new Range(1, 1);
+		assertFalse("The value 25.02 should be within (-10.23, 25.02)", exampleRange.contains(25.02));
+	}
+	
+	@Test
+	public void testContainsRangeIsSingleValue2() {
+		exampleRange = new Range(1, 1);
+		assertTrue("The value 25.02 should be within (-10.23, 25.02)", exampleRange.contains(1));
+	}
+	
+	@Test
+	public void testContainsRangeIsSingleValue3() {
+		exampleRange = new Range(1, 1);
+		assertFalse("The value 25.02 should be within (-10.23, 25.02)", exampleRange.contains(-1));
+	}
+	
 	
 	/**
 	 * Tests the contains method where the input is just above the upper bound of the range,
@@ -412,6 +505,18 @@ public class RangeTests {
 	    }
 	    
 	    @Test
+	    public void testCombineDoesntChangeBounds() {
+	    	exampleRange = new Range(2, 3);
+	    	Range range2 = new Range(4, 5);
+	    	Range combined = Range.combineIgnoringNaN(range2, exampleRange);
+	    	
+	    	assertEquals(2, exampleRange.getLowerBound(), 0.0001d);
+	    	assertEquals(3, exampleRange.getUpperBound(), 0.0001d);
+	    	assertEquals(4, range2.getLowerBound(), 0.0001d);
+	    	assertEquals(5, range2.getUpperBound(), 0.0001d);
+	    }
+	    
+	    @Test
 	    public void testCombineIgnoringNaNLowerNaNUpperNaN() {
 	    	exampleRange = new Range(Double.NaN, Double.NaN);
 	    	Range range2 = new Range(Double.NaN, Double.NaN);
@@ -467,12 +572,34 @@ public class RangeTests {
 	    }
 	    
 	    @Test
+	    public void testShiftNotNull() {
+	    	boolean passed = false;
+	    	try {
+	    		Range combined = Range.shift(null, 1);
+	    	} catch (IllegalArgumentException e) {
+	    		passed = true;
+	    	}
+	    	
+	    	assertTrue(passed);
+	    }
+	    
+	    @Test
 	    public void testShiftZeroCrossing() {
 	    	exampleRange = new Range(-2, -1);
 	    	Range combined = Range.shift(exampleRange, 3, true);
 	    	
 	    	assertEquals(1.0, combined.getLowerBound(), .000000001d);
 	    	assertEquals(2.0, combined.getUpperBound(), .000000001d);
+	    }
+	    
+	    @Test
+	    public void testShiftZeroCrossingDoesntChangeBounds() {
+	    	exampleRange = new Range(-2, -1);
+	    	Range combined = Range.shift(exampleRange, 3, true);
+	    	combined = Range.shift(exampleRange, 3, true);
+	    	
+	    	assertEquals(-2, exampleRange.getLowerBound(), .000000001d);
+	    	assertEquals(-1, exampleRange.getUpperBound(), .000000001d);
 	    }
 	    
 	    @Test
@@ -542,7 +669,7 @@ public class RangeTests {
 	    public void testEqualsNotRangeObj() {
 	    	Double obj = 1.1;
 	    	exampleRange = new Range(1, 1);
-	    	
+	    	exampleRange.equals(obj);
 	    	assertFalse(exampleRange.equals(obj));
 	    }
 	    
@@ -550,7 +677,7 @@ public class RangeTests {
 	    public void testEqualsUpperDoesntMatch() {
 	    	exampleRange = new Range(1, 2);
 	    	Range range2 = new Range(1, 3);
-	    	
+	    	exampleRange.equals(range2);
 	    	assertFalse(exampleRange.equals(range2));
 	    }
 	    
@@ -558,7 +685,7 @@ public class RangeTests {
 	    public void testEqualsLowerDoesntMatch() {
 	    	exampleRange = new Range(1, 2);
 	    	Range range2 = new Range(2, 3);
-	    	
+	    	exampleRange.equals(range2);
 	    	assertFalse(exampleRange.equals(range2));
 	    }
 	    
@@ -567,12 +694,76 @@ public class RangeTests {
 	    public void testEqualsRangeMatches() {
 	    	exampleRange = new Range(1, 2);
 	    	Range range2 = new Range(1, 2);
-	    	
+	    	exampleRange.equals(range2);
 	    	assertTrue(exampleRange.equals(range2));
 	    }
 	    @Test
-	    public void testHashCode() {
+	    public void testHashCodeReturnsInt() {
 	    	exampleRange = new Range(1, 1);
 	    	assertTrue(Integer.class.isInstance(exampleRange.hashCode()));
 	    }
+	    
+	    @Test
+	    public void testHashReturnsCorrectHash() {
+	    	exampleRange = new Range(2, 3);
+	    	
+	    	int result;
+	        long temp;
+	        temp = Double.doubleToLongBits(2);
+	        result = (int) (temp ^ (temp >>> 32));
+	        temp = Double.doubleToLongBits(3);
+	        result = 29 * result + (int) (temp ^ (temp >>> 32));
+	        
+	        exampleRange.hashCode();
+	        
+	        assertEquals(result, exampleRange.hashCode());
+	        assertEquals(2, exampleRange.getLowerBound(), 0.0001d);
+	        assertEquals(3, exampleRange.getUpperBound(), 0.0001d);
+	    }
+	    
+	    @Test
+	    public void testHashDoesntChangeBounds() {
+	    	exampleRange = new Range(1, 2);
+	    	
+	    	exampleRange.hashCode();
+	    	exampleRange.hashCode();
+	    	
+	    	boolean passed = false;
+	    	if (exampleRange.getLowerBound() == 1 && exampleRange.getUpperBound() == 2) {
+	    		passed = true;
+	    	}
+	        
+	        assertTrue(passed);
+	    }
+	    
+	    @Test
+	    public void testConstructorDoesntChangeBounds() {
+	    	Range range = new Range (2, 3);
+	    	assertEquals(2, range.getLowerBound(), 0.0001d);
+	    	assertEquals(3, range.getUpperBound(), 0.0001d);
+	    }
+	    
+	    @Test
+	    public void testConstructorBoundsAreCorrect() {
+	    	Range range = new Range (2, 3);
+	    	assertEquals(2, range.getLowerBound(), 0.0001d);
+	    	assertEquals(3, range.getUpperBound(), 0.0001d);
+	    }
+	    
+	    @Test
+	    public void testConstuctorErrorMessage() {
+	    	
+	    	
+	    	String expected = "Range(double, double): require lower (3.0) <= upper (2.0).";
+	    	String actual = "";
+	    	
+	    	try {
+	    		Range range = new Range(3, 2);
+	    	} catch (IllegalArgumentException e) {
+	    		actual = e.getMessage();
+	    	}
+	    	
+	    	assertEquals(expected, actual);
+	    }
+	    
 }
